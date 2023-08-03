@@ -210,6 +210,15 @@ const ContactScreen = ({navigation}) => {
         setOpenForm(false);
       })
       .catch(err => {
+        toast.show({
+          render: () => {
+            return (
+              <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
+                Failed to Create Contact!
+              </Box>
+            );
+          },
+        });
         setOpenForm(false);
       });
   };

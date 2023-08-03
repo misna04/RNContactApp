@@ -52,7 +52,11 @@ export const updateContact = createAsyncThunk(
         return res.data;
       })
       .catch(err => {
-        return {error: err.response.status};
+        if (err.response && err.response.data) {
+          throw new Error(err.response.data.message);
+        } else {
+          throw new Error('Unknown error occurred.');
+        }
       });
   },
 );
@@ -66,7 +70,11 @@ export const deleteContact = createAsyncThunk(
         return res.data;
       })
       .catch(err => {
-        return {error: err.response.status};
+        if (err.response && err.response.data) {
+          throw new Error(err.response.data.message);
+        } else {
+          throw new Error('Unknown error occurred.');
+        }
       });
   },
 );
@@ -92,20 +100,26 @@ export const contactSlice = createSlice({
     builder
       .addCase(getContacts.fulfilled, (state, action) => {
         state.data = action.payload.data;
+        state.error = null;
       })
       .addCase(getDetail.fulfilled, (state, action) => {
         state.detail = action.payload.data;
+        state.error = null;
       })
-      //   .addCase(createContact.fulfilled, (state, action) => {
-      //     console.log('payload', action.payload);
-      //     state.data = action.payload;
-      //   })
-      .addCase(updateContact.fulfilled, (state, action) => {
-        state.error = action.payload.error;
+      // .addCase(updateContact.fulfilled, (state, action) => {
+      //   state.error = action.error.message;
+      // })
+      // .addCase(deleteContact.fulfilled, (state, action) => {
+      //   state.error = action.error.message;
+      // });
+      .addCase(createContact.rejected, (state, action) => {
+        state.error = action.error.message;
       })
-      .addCase(deleteContact.fulfilled, (state, action) => {
-        state.error = action.payload.error;
-        // state.payload = action.payload;
+      .addCase(updateContact.rejected, (state, action) => {
+        state.error = action.error.message;
+      })
+      .addCase(deleteContact.rejected, (state, action) => {
+        state.error = action.error.message;
       });
   },
 });

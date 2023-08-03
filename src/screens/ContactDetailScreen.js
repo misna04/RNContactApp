@@ -206,51 +206,36 @@ const ContactDetailScreen = ({route, navigation}) => {
     dispatch(updateContact(data))
       .unwrap()
       .then(res => {
-        if (error) {
-          toast.show({
-            render: () => {
-              return (
-                <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
-                  Contact Update Failed!
-                </Box>
-              );
-            },
-          });
-          setOpenForm(false);
-        } else {
-          toast.show({
-            render: () => {
-              return (
-                <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
-                  Contact Updated!
-                </Box>
-              );
-            },
-          });
-
-          setOpenForm(false);
-        }
+        toast.show({
+          render: () => {
+            return (
+              <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
+                Contact Updated!
+              </Box>
+            );
+          },
+        });
+        setOpenForm(false);
       })
       .catch(err => {
+        toast.show({
+          render: () => {
+            return (
+              <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
+                Contact Update Failed!
+              </Box>
+            );
+          },
+        });
         setOpenForm(false);
       });
   };
 
   const handleDelete = () => {
-    dispatch(deleteContact(id)).then(res => {
-      console.log('res screen', res, store);
-      if (error) {
-        toast.show({
-          render: () => {
-            return (
-              <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
-                Delete Failed!
-              </Box>
-            );
-          },
-        });
-        setConfirm(false);
-      } else {
+    dispatch(deleteContact(id))
+      .unwrap()
+      .then(res => {
+        console.log('testing', res);
         toast.show({
           render: () => {
             return (
@@ -262,38 +247,64 @@ const ContactDetailScreen = ({route, navigation}) => {
         });
 
         navigation.goBack();
-      }
-      //   if (res.payload) {
-      //     toast.show({
-      //       render: () => {
-      //         return (
-      //           <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
-      //             Contact Deleted!
-      //           </Box>
-      //         );
-      //       },
-      //     });
-      //   } else {
-      //     toast.show({
-      //       render: () => {
-      //         return (
-      //           <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
-      //             Delete Failed!
-      //           </Box>
-      //         );
-      //       },
-      //     });
-      //     navigation.goBack();
-      //   }
+      })
+      .catch(err => {
+        console.log('err screen', err);
+        toast.show({
+          render: () => {
+            return (
+              <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
+                Delete Failed!
+              </Box>
+            );
+          },
+        });
+        setConfirm(false);
+      });
+    // navigation.goBack();
+    //   .unwrap()
+    //   .then(payload => {
+    //     console.log('res', payload);
+    //     //   console.log('res screen', res, store);
+    //     //   if (error) {
+    //     //     toast.show({
+    //     //       render: () => {
+    //     //         return (
+    //     //           <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
+    //     //             Delete Failed!
+    //     //           </Box>
+    //     //         );
+    //     //       },
+    //     //     });
+    //     //     setConfirm(false);
+    //     //   } else {
+    //     //     toast.show({
+    //     //       render: () => {
+    //     //         return (
+    //     //           <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
+    //     //             Contact Deleted!
+    //     //           </Box>
+    //     //         );
+    //     //       },
+    //     //     });
 
-      //   setConfirm(false);
-    });
+    //     //     navigation.goBack();
+    //     //   }
+    //   })
+    //   .catch(error => console.error('rejected', error));
   };
 
   useEffect(() => {
     dispatch(getDetail(id));
   }, []);
 
+  //   useEffect(() => {
+  //     if (error) {
+  //       alert('Somethings Wrong!');
+  //     }
+  //   }, [error]);
+
+  console.log('screen err', error);
   let fullName = `${detail.firstName + ' ' + detail.lastName}`;
   const initials = getInitials(fullName);
 
