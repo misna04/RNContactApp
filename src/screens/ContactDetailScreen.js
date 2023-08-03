@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   Box,
   Avatar,
@@ -13,17 +13,50 @@ import {
   Input,
   Button,
   Popover,
+  FormControl,
+  WarningOutlineIcon,
+  useToast,
 } from 'native-base';
 import {Platform, PermissionsAndroid} from 'react-native';
 import IonIcons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
-import * as ImagePicker from 'react-native-image-picker';
+import {useDispatch, useSelector} from 'react-redux';
+import {useForm, Controller} from 'react-hook-form';
 
 import ModalForm from '../components/ModalForm';
 import ModalAlert from '../components/ModalForm';
 
-const ContactDetailScreen = ({navigation}) => {
+import {
+  getContacts,
+  getDetail,
+  createContact,
+  updateContact,
+  deleteContact,
+} from '../redux/reducer/contacts';
+
+import {getInitials} from '../helpers/getInitials';
+
+const ContactDetailScreen = ({route, navigation}) => {
+  const {id} = route.params;
+
+  const dispatch = useDispatch();
+  const store = useSelector(state => state.contacts);
+  const {detail, error} = store;
+
+  const toast = useToast();
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    setValue,
+    reset,
+    formState: {errors},
+  } = useForm();
+
+  // state
   const [openForm, setOpenForm] = useState(false);
   const [openOptCamera, setOptCamera] = useState(false);
   const [filePath, setFilePath] = useState({});
@@ -32,8 +65,8 @@ const ContactDetailScreen = ({navigation}) => {
   const handleBack = () => {
     navigation.goBack();
   };
-  const handleDelete = () => {};
   const handleOpenForm = () => {
+    reset(detail);
     setOpenForm(true);
   };
 
@@ -169,6 +202,101 @@ const ContactDetailScreen = ({navigation}) => {
     setOptCamera(!openOptCamera);
   };
 
+  const onSubmit = async data => {
+    dispatch(updateContact(data))
+      .unwrap()
+      .then(res => {
+        if (error) {
+          toast.show({
+            render: () => {
+              return (
+                <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
+                  Contact Update Failed!
+                </Box>
+              );
+            },
+          });
+          setOpenForm(false);
+        } else {
+          toast.show({
+            render: () => {
+              return (
+                <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
+                  Contact Updated!
+                </Box>
+              );
+            },
+          });
+
+          setOpenForm(false);
+        }
+      })
+      .catch(err => {
+        setOpenForm(false);
+      });
+  };
+
+  const handleDelete = () => {
+    dispatch(deleteContact(id)).then(res => {
+      console.log('res screen', res, store);
+      if (error) {
+        toast.show({
+          render: () => {
+            return (
+              <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
+                Delete Failed!
+              </Box>
+            );
+          },
+        });
+        setConfirm(false);
+      } else {
+        toast.show({
+          render: () => {
+            return (
+              <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
+                Contact Deleted!
+              </Box>
+            );
+          },
+        });
+
+        navigation.goBack();
+      }
+      //   if (res.payload) {
+      //     toast.show({
+      //       render: () => {
+      //         return (
+      //           <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
+      //             Contact Deleted!
+      //           </Box>
+      //         );
+      //       },
+      //     });
+      //   } else {
+      //     toast.show({
+      //       render: () => {
+      //         return (
+      //           <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
+      //             Delete Failed!
+      //           </Box>
+      //         );
+      //       },
+      //     });
+      //     navigation.goBack();
+      //   }
+
+      //   setConfirm(false);
+    });
+  };
+
+  useEffect(() => {
+    dispatch(getDetail(id));
+  }, []);
+
+  let fullName = `${detail.firstName + ' ' + detail.lastName}`;
+  const initials = getInitials(fullName);
+
   return (
     <Box flex={1} bg="#fff">
       <HStack justifyContent="space-between" alignItems="center" m={2}>
@@ -195,10 +323,11 @@ const ContactDetailScreen = ({navigation}) => {
           <Avatar
             size="xl"
             bg="#a2abd4"
-            // source={{
-            //   uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80',
-            // }}
-          />
+            source={{
+              uri: detail?.photo,
+            }}>
+            {initials}
+          </Avatar>
         </Box>
 
         {/* card */}
@@ -218,9 +347,11 @@ const ContactDetailScreen = ({navigation}) => {
               <Box mt={10}>
                 <Center>
                   <Text fontSize={28} color="#3c3e4f">
-                    MS-HuecoDev
+                    {detail?.firstName + ' ' + detail?.lastName}
                   </Text>
-                  <Text color="#a2abd4">+62 98882773782</Text>
+                  <Text color="#a2abd4">
+                    {detail.phoneNumber ? detail.phoneNumber : '+62-00000000'}
+                  </Text>
                 </Center>
                 <HStack
                   justifyContent="center"
@@ -277,6 +408,10 @@ const ContactDetailScreen = ({navigation}) => {
           <Box>
             <Text color="#a2abd4">Birthday</Text>
             <Text color="#3c3e4f">10/10/1990</Text>
+          </Box>
+          <Box>
+            <Text color="#a2abd4">Umur</Text>
+            <Text color="#3c3e4f">{detail?.age}</Text>
           </Box>
         </VStack>
       </Box>
@@ -347,7 +482,7 @@ const ContactDetailScreen = ({navigation}) => {
                   }}
                   isOpen={openOptCamera}
                   onClose={onOpenOptionCamera}>
-                  <Popover.Content accessibilityLabel="Delete Customerd" w="56">
+                  <Popover.Content w="56">
                     <Popover.Arrow />
                     <Popover.CloseButton />
                     <Popover.Header>Photo</Popover.Header>
@@ -370,11 +505,105 @@ const ContactDetailScreen = ({navigation}) => {
                   </Popover.Content>
                 </Popover>
               </Center>
-              <Input variant="underlined" placeholder="First Name" />
-              <Input variant="underlined" placeholder="Last Name" />
-              <Input variant="underlined" placeholder="Phone Number" />
-              <Input variant="underlined" placeholder="Umur" type="number" />
-              <Input variant="underlined" placeholder="Photo Url" />
+              <Controller
+                control={control}
+                name="firstName"
+                rules={{required: true}}
+                render={({field: {onChange, value}}) => (
+                  <FormControl isInvalid={errors.firstName}>
+                    <Input
+                      variant="underlined"
+                      placeholder="First Name"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                    <FormControl.ErrorMessage
+                      leftIcon={<WarningOutlineIcon size="xs" />}>
+                      First Name is Required!
+                    </FormControl.ErrorMessage>
+                  </FormControl>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="lastName"
+                rules={{required: true}}
+                render={({field: {onChange, value}}) => (
+                  <FormControl isInvalid={errors.lastName}>
+                    <Input
+                      variant="underlined"
+                      placeholder="Last Name"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                    <FormControl.ErrorMessage
+                      leftIcon={<WarningOutlineIcon size="xs" />}>
+                      Last Name is Required!
+                    </FormControl.ErrorMessage>
+                  </FormControl>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="phoneNumber"
+                // rules={{required: true}}
+                render={({field: {onChange, value}}) => (
+                  <FormControl isInvalid={errors.phoneNumber}>
+                    <Input
+                      variant="underlined"
+                      placeholder="Phone Number"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                    <FormControl.ErrorMessage
+                      leftIcon={<WarningOutlineIcon size="xs" />}>
+                      Phone Number is Required!
+                    </FormControl.ErrorMessage>
+                  </FormControl>
+                )}
+              />
+              <Controller
+                control={control}
+                name="age"
+                rules={{required: true}}
+                render={({field: {onChange, value}}) => (
+                  <FormControl isInvalid={errors.age}>
+                    <Input
+                      variant="underlined"
+                      placeholder="Age"
+                      onChangeText={onChange}
+                      value={value}
+                      type="number"
+                    />
+                    <FormControl.ErrorMessage
+                      leftIcon={<WarningOutlineIcon size="xs" />}>
+                      Age is Required!
+                    </FormControl.ErrorMessage>
+                  </FormControl>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="photo"
+                rules={{required: true}}
+                render={({field: {onChange, value}}) => (
+                  <FormControl isInvalid={errors.photo}>
+                    <Input
+                      variant="underlined"
+                      placeholder="Photo Url"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                    <FormControl.ErrorMessage
+                      leftIcon={<WarningOutlineIcon size="xs" />}>
+                      Photo is Required!
+                    </FormControl.ErrorMessage>
+                  </FormControl>
+                )}
+              />
             </VStack>
           </Box>
         }
@@ -382,7 +611,7 @@ const ContactDetailScreen = ({navigation}) => {
           <Button
             rounded={100}
             px={10}
-            onPress={handleSave}
+            onPress={handleSubmit(onSubmit)}
             bg="#ff64cf"
             _pressed={{
               bg: '#b34691',
@@ -399,7 +628,11 @@ const ContactDetailScreen = ({navigation}) => {
         onClose={() => setConfirm(false)}
         title="Delete Contact"
         content={<Text>Are you sure to DELETE contact?</Text>}
-        footer={<Button colorScheme="danger">Delete</Button>}
+        footer={
+          <Button colorScheme="danger" onPress={handleDelete}>
+            Delete
+          </Button>
+        }
       />
     </Box>
   );

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   Fab,
   Box,
@@ -16,6 +16,9 @@ import {
   Modal,
   Button,
   Popover,
+  WarningOutlineIcon,
+  FormControl,
+  useToast,
 } from 'native-base';
 import {
   FlatList,
@@ -28,20 +31,53 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import IonIcons from 'react-native-vector-icons/Ionicons';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import * as ImagePicker from 'react-native-image-picker';
+import {useDispatch, useSelector} from 'react-redux';
+import {useForm, Controller} from 'react-hook-form';
 
 // components
 import ModalForm from '../components/ModalForm';
 
+// helpers
+import {getInitials} from '../helpers/getInitials';
+
+// redux
+import {
+  getContacts,
+  getDetail,
+  createContact,
+  updateContact,
+  deleteContact,
+} from '../redux/reducer/contacts';
+
 const ContactScreen = ({navigation}) => {
+  // store
+  const dispatch = useDispatch();
+  const store = useSelector(state => state.contacts);
+  const {data} = store;
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    setValue,
+    reset,
+    formState: {errors},
+  } = useForm();
+
+  const toast = useToast();
+
+  // state
   const [openForm, setOpenForm] = useState(false);
   const [openOptCamera, setOptCamera] = useState(false);
 
-  const handlePressContact = () => {
-    navigation.navigate('ContactDetail');
+  const handlePressContact = id => {
+    navigation.navigate('ContactDetail', {id});
   };
 
   const handleAddContact = () => {
     setOpenForm(true);
+    reset();
   };
 
   const onCloseForm = () => {
@@ -155,6 +191,33 @@ const ContactScreen = ({navigation}) => {
       }
     } else return true;
   };
+
+  const onSubmit = async data => {
+    dispatch(createContact(data))
+      .unwrap()
+      .then(res => {
+        console.log(res);
+        toast.show({
+          render: () => {
+            return (
+              <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
+                Contact Created!
+              </Box>
+            );
+          },
+        });
+
+        setOpenForm(false);
+      })
+      .catch(err => {
+        setOpenForm(false);
+      });
+  };
+
+  useEffect(() => {
+    console.log('useeffect');
+    dispatch(getContacts());
+  }, []);
   return (
     <>
       <Box style={{flex: 1}} bg="#fff">
@@ -175,40 +238,47 @@ const ContactScreen = ({navigation}) => {
           </VStack>
           <FlatList
             data={data}
-            renderItem={({item}) => (
-              <TouchableOpacity onPress={handlePressContact}>
-                <Box
-                  pl={['0', '5']}
-                  // pr={['0', '5']}
-                  py="3">
-                  <HStack space={[2, 3]}>
-                    <Avatar
-                      size="48px"
-                      source={{
-                        uri: item.avatarUrl,
-                      }}
-                    />
-                    <VStack>
-                      <Text
-                        _dark={{
-                          color: 'warmGray.50',
-                        }}
-                        color="coolGray.800"
-                        bold>
-                        {item.fullName}
-                      </Text>
-                      <Text
-                        color="coolGray.600"
-                        _dark={{
-                          color: 'warmGray.200',
+            renderItem={({item}) => {
+              let fullName = `${item.firstName + ' ' + item.lastName}`;
+              const initials = getInitials(fullName);
+
+              return (
+                <TouchableOpacity onPress={() => handlePressContact(item.id)}>
+                  <Box
+                    pl={['0', '5']}
+                    // pr={['0', '5']}
+                    py="3">
+                    <HStack space={[2, 3]}>
+                      <Avatar
+                        bg="green.500"
+                        size="48px"
+                        source={{
+                          uri: item.photo,
                         }}>
-                        {item.recentText}
-                      </Text>
-                    </VStack>
-                  </HStack>
-                </Box>
-              </TouchableOpacity>
-            )}
+                        {initials}
+                      </Avatar>
+                      <VStack>
+                        <Text
+                          _dark={{
+                            color: 'warmGray.50',
+                          }}
+                          color="coolGray.800"
+                          bold>
+                          {item.firstName + ' ' + item.lastName}
+                        </Text>
+                        <Text
+                          color="coolGray.600"
+                          _dark={{
+                            color: 'warmGray.200',
+                          }}>
+                          {item.age}
+                        </Text>
+                      </VStack>
+                    </HStack>
+                  </Box>
+                </TouchableOpacity>
+              );
+            }}
             keyExtractor={item => item.id}
           />
         </Box>
@@ -245,13 +315,7 @@ const ContactScreen = ({navigation}) => {
                   trigger={triggerProps => {
                     return (
                       <Pressable {...triggerProps} onPress={onOpenOptionCamera}>
-                        <Avatar
-                          size="xl"
-                          bg="#a2abd4"
-                          // source={{
-                          //   uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80',
-                          // }}
-                        />
+                        <Avatar size="xl" bg="#a2abd4" />
                       </Pressable>
                     );
                   }}
@@ -280,11 +344,105 @@ const ContactScreen = ({navigation}) => {
                   </Popover.Content>
                 </Popover>
               </Center>
-              <Input variant="underlined" placeholder="First Name" />
-              <Input variant="underlined" placeholder="Last Name" />
-              <Input variant="underlined" placeholder="Phone Number" />
-              <Input variant="underlined" placeholder="Umur" type="number" />
-              <Input variant="underlined" placeholder="Photo Url" />
+
+              <Controller
+                control={control}
+                name="firstName"
+                rules={{required: true}}
+                render={({field: {onChange, value}}) => (
+                  <FormControl isInvalid={errors.firstName}>
+                    <Input
+                      variant="underlined"
+                      placeholder="First Name"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                    <FormControl.ErrorMessage
+                      leftIcon={<WarningOutlineIcon size="xs" />}>
+                      First Name is Required!
+                    </FormControl.ErrorMessage>
+                  </FormControl>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="lastName"
+                rules={{required: true}}
+                render={({field: {onChange, value}}) => (
+                  <FormControl isInvalid={errors.lastName}>
+                    <Input
+                      variant="underlined"
+                      placeholder="Last Name"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                    <FormControl.ErrorMessage
+                      leftIcon={<WarningOutlineIcon size="xs" />}>
+                      Last Name is Required!
+                    </FormControl.ErrorMessage>
+                  </FormControl>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="phoneNumber"
+                // rules={{required: true}}
+                render={({field: {onChange, value}}) => (
+                  <FormControl isInvalid={errors.phoneNumber}>
+                    <Input
+                      variant="underlined"
+                      placeholder="Phone Number"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                    <FormControl.ErrorMessage
+                      leftIcon={<WarningOutlineIcon size="xs" />}>
+                      Phone Number is Required!
+                    </FormControl.ErrorMessage>
+                  </FormControl>
+                )}
+              />
+              <Controller
+                control={control}
+                name="age"
+                rules={{required: true}}
+                render={({field: {onChange, value}}) => (
+                  <FormControl isInvalid={errors.age}>
+                    <Input
+                      variant="underlined"
+                      placeholder="Age"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                    <FormControl.ErrorMessage
+                      leftIcon={<WarningOutlineIcon size="xs" />}>
+                      Age is Required!
+                    </FormControl.ErrorMessage>
+                  </FormControl>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="photo"
+                rules={{required: true}}
+                render={({field: {onChange, value}}) => (
+                  <FormControl isInvalid={errors.photo}>
+                    <Input
+                      variant="underlined"
+                      placeholder="Photo Url"
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                    <FormControl.ErrorMessage
+                      leftIcon={<WarningOutlineIcon size="xs" />}>
+                      Photo is Required!
+                    </FormControl.ErrorMessage>
+                  </FormControl>
+                )}
+              />
             </VStack>
           </Box>
         }
@@ -292,7 +450,7 @@ const ContactScreen = ({navigation}) => {
           <Button
             rounded={100}
             px={10}
-            onPress={handleSave}
+            onPress={handleSubmit(onSubmit)}
             bg="#ff64cf"
             _pressed={{
               bg: '#b34691',
