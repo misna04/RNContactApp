@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // ===> api create
 const api = axios.create({
-  baseURL: 'https://contact.herokuapp.com',
+  baseURL: 'http://192.168.55.53:100/',
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',

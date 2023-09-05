@@ -7,7 +7,9 @@ import {
   Center,
   VStack,
   NativeBaseProvider,
+  KeyboardAvoidingView,
 } from 'native-base';
+import {Platform} from 'react-native';
 
 const ModalForm = props => {
   let {isOpen, onClose, size, title, content, footer} = props;
@@ -17,12 +19,14 @@ const ModalForm = props => {
       onClose={onClose}
       size={size}
       animationPreset="slide">
-      <Modal.Content>
-        <Modal.CloseButton />
-        <Modal.Header>{title}</Modal.Header>
-        <Modal.Body>{content}</Modal.Body>
-        <Modal.Footer>{footer}</Modal.Footer>
-      </Modal.Content>
+      <KeyboardAvoidingView style={{width: '100%'}} behavior={'position'}>
+        <Modal.Content>
+          <Modal.CloseButton />
+          <Modal.Header>{title}</Modal.Header>
+          <Modal.Body>{content}</Modal.Body>
+          <Modal.Footer>{footer}</Modal.Footer>
+        </Modal.Content>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
