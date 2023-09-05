@@ -25,7 +25,6 @@ export const getDetail = createAsyncThunk('contact/detail', async id => {
 export const createContact = createAsyncThunk(
   'contact/create',
   async (data, {dispatch, getState}) => {
-    console.log('data', data);
     try {
       const res = await Api.createContact(data);
       await dispatch(getContacts(getState()));

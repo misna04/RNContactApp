@@ -5,8 +5,8 @@ import {Icon} from 'native-base';
 
 // screens
 import ContactStack from './ContactStack';
-import MessageSCreen from '../screens/MessageScreen';
-import SettingScreen from '../screens/SettingScreen';
+import MessageSCreen from '../screens/chats/MessageScreen';
+import SettingScreen from '../screens/settings/SettingScreen';
 
 const Tab = createBottomTabNavigator();
 

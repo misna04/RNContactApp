@@ -1,61 +1,50 @@
 import React, {useState, useEffect} from 'react';
 import {
-  Fab,
   Box,
-  Icon,
-  IconButton,
+  Avatar,
+  Text,
   Center,
   HStack,
-  Avatar,
-  VStack,
-  Text,
-  Spacer,
-  Heading,
-  Input,
+  Icon,
+  IconButton,
   Pressable,
-  Modal,
+  Heading,
+  VStack,
+  Input,
   Button,
   Popover,
-  WarningOutlineIcon,
   FormControl,
+  WarningOutlineIcon,
   useToast,
-  KeyboardAvoidingView,
-  ScrollView,
 } from 'native-base';
-import {
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  PermissionsAndroid,
-  Platform,
-} from 'react-native';
-import AntDesign from 'react-native-vector-icons/AntDesign';
+import {Platform, PermissionsAndroid} from 'react-native';
 import IonIcons from 'react-native-vector-icons/Ionicons';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
-import * as ImagePicker from 'react-native-image-picker';
 import {useDispatch, useSelector} from 'react-redux';
 import {useForm, Controller} from 'react-hook-form';
 
-// components
-import ModalForm from '../components/ModalForm';
+import ModalForm from '../../components/ModalForm';
+import ModalAlert from '../../components/ModalForm';
 
-// helpers
-import {getInitials} from '../helpers/getInitials';
-
-// redux
 import {
   getContacts,
   getDetail,
   createContact,
   updateContact,
   deleteContact,
-} from '../redux/reducer/contacts';
+} from '../../redux/reducer/contacts';
 
-const ContactScreen = ({navigation}) => {
-  // store
+import {getInitials} from '../../helpers/getInitials';
+
+const ContactDetailScreen = ({route, navigation}) => {
+  const {id} = route.params;
+
   const dispatch = useDispatch();
   const store = useSelector(state => state.contacts);
-  const {data} = store;
+  const {detail, error} = store;
+
+  const toast = useToast();
 
   const {
     register,
@@ -67,31 +56,24 @@ const ContactScreen = ({navigation}) => {
     formState: {errors},
   } = useForm();
 
-  const toast = useToast();
-
   // state
   const [openForm, setOpenForm] = useState(false);
   const [openOptCamera, setOptCamera] = useState(false);
+  const [filePath, setFilePath] = useState({});
+  const [confirm, setConfirm] = useState(false);
 
-  const handlePressContact = id => {
-    navigation.navigate('ContactDetail', {id});
+  const handleBack = () => {
+    navigation.goBack();
   };
-
-  const handleAddContact = () => {
+  const handleOpenForm = () => {
+    reset(detail);
     setOpenForm(true);
-    reset();
   };
 
-  const onCloseForm = () => {
+  const handleSave = () => {};
+
+  onCloseForm = () => {
     setOpenForm(false);
-  };
-
-  const handleSave = () => {
-    console.log('submit');
-  };
-
-  const onOpenOptionCamera = () => {
-    setOptCamera(!openOptCamera);
   };
 
   const handleOpenCamera = async () => {
@@ -113,8 +95,6 @@ const ContactScreen = ({navigation}) => {
     // if (isCameraPermitted && isStoragePermitted)
     if (isCameraPermitted) {
       launchCamera(options, response => {
-        console.log('Response = ', response);
-
         if (response.didCancel) {
           alert('User cancelled camera picker');
           return;
@@ -149,8 +129,6 @@ const ContactScreen = ({navigation}) => {
     };
 
     launchImageLibrary(options, response => {
-      console.log('Response = ', response);
-
       if (response.didCancel) {
         alert('User cancelled camera picker');
         return;
@@ -194,21 +172,45 @@ const ContactScreen = ({navigation}) => {
     } else return true;
   };
 
+  //   const requestExternalWritePermission = async () => {
+  //     if (Platform.OS === 'android') {
+  //       try {
+  //         const granted = await PermissionsAndroid.request(
+  //           PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+  //           {
+  //             title: 'External Storage Write Permission',
+  //             message: 'App needs write permission',
+  //           },
+  //         );
+
+  //         console.log('granted', granted);
+  //         // If WRITE_EXTERNAL_STORAGE Permission is granted
+  //         return granted === PermissionsAndroid.RESULTS.GRANTED;
+  //       } catch (err) {
+  //         console.warn(err);
+  //         alert('Write permission err', err);
+  //         return false;
+  //       }
+  //     } else return true;
+  //   };
+
+  const onOpenOptionCamera = () => {
+    setOptCamera(!openOptCamera);
+  };
+
   const onSubmit = async data => {
-    dispatch(createContact(data))
+    dispatch(updateContact(data))
       .unwrap()
       .then(res => {
-        console.log(res);
         toast.show({
           render: () => {
             return (
               <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
-                Contact Created!
+                Contact Updated!
               </Box>
             );
           },
         });
-
         setOpenForm(false);
       })
       .catch(err => {
@@ -216,7 +218,7 @@ const ContactScreen = ({navigation}) => {
           render: () => {
             return (
               <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
-                Failed to Create Contact!
+                Contact Update Failed!
               </Box>
             );
           },
@@ -225,99 +227,245 @@ const ContactScreen = ({navigation}) => {
       });
   };
 
+  const handleDelete = () => {
+    dispatch(deleteContact(id))
+      .unwrap()
+      .then(res => {
+        toast.show({
+          render: () => {
+            return (
+              <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
+                Contact Deleted!
+              </Box>
+            );
+          },
+        });
+
+        navigation.goBack();
+      })
+      .catch(err => {
+        toast.show({
+          render: () => {
+            return (
+              <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
+                Delete Failed!
+              </Box>
+            );
+          },
+        });
+        setConfirm(false);
+      });
+    // navigation.goBack();
+    //   .unwrap()
+    //   .then(payload => {
+    //     console.log('res', payload);
+    //     //   console.log('res screen', res, store);
+    //     //   if (error) {
+    //     //     toast.show({
+    //     //       render: () => {
+    //     //         return (
+    //     //           <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
+    //     //             Delete Failed!
+    //     //           </Box>
+    //     //         );
+    //     //       },
+    //     //     });
+    //     //     setConfirm(false);
+    //     //   } else {
+    //     //     toast.show({
+    //     //       render: () => {
+    //     //         return (
+    //     //           <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
+    //     //             Contact Deleted!
+    //     //           </Box>
+    //     //         );
+    //     //       },
+    //     //     });
+
+    //     //     navigation.goBack();
+    //     //   }
+    //   })
+    //   .catch(error => console.error('rejected', error));
+  };
+
   useEffect(() => {
-    dispatch(getContacts());
+    dispatch(getDetail(id));
   }, []);
 
-  return (
-    <>
-      <Box style={{flex: 1}} bg="#fff">
-        <Box mx={7} my={5}>
-          <VStack my={5} space={3}>
-            <Heading style={styles.txtColor}>CONTACTS</Heading>
-            <Input
-              InputLeftElement={
-                <Icon
-                  as={<IonIcons name="search-outline" />}
-                  size={5}
-                  ml="2"
-                  color="muted.400"
-                />
-              }
-              placeholder="Search"
-            />
-          </VStack>
-          <FlatList
-            data={data}
-            renderItem={({item}) => {
-              let fullName = `${item.firstName + ' ' + item.lastName}`;
-              const initials = getInitials(fullName);
+  //   useEffect(() => {
+  //     if (error) {
+  //       alert('Somethings Wrong!');
+  //     }
+  //   }, [error]);
 
-              return (
-                <TouchableOpacity
-                  key={item._id}
-                  onPress={() => handlePressContact(item._id)}>
-                  <Box pl={['0', '5']} py="3">
-                    <HStack space={[2, 3]}>
-                      <Avatar
-                        bg="green.500"
-                        size="48px"
-                        source={{
-                          uri: item.photo,
-                        }}>
-                        {initials}
-                      </Avatar>
-                      <VStack>
-                        <Text
-                          _dark={{
-                            color: 'warmGray.50',
-                          }}
-                          color="coolGray.800"
-                          bold>
-                          {item.firstName + ' ' + item.lastName}
-                        </Text>
-                        <Text
-                          color="coolGray.600"
-                          _dark={{
-                            color: 'warmGray.200',
-                          }}>
-                          {item.age}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                  </Box>
-                </TouchableOpacity>
-              );
-            }}
-            keyExtractor={item => item.id}
-          />
+  let fullName = `${detail.firstName + ' ' + detail.lastName}`;
+  const initials = getInitials(fullName);
+
+  return (
+    <Box flex={1} bg="#fff">
+      <HStack justifyContent="space-between" alignItems="center" m={2}>
+        <IconButton
+          onPress={handleBack}
+          size="lg"
+          borderRadius="full"
+          _pressed={{
+            bg: '#5d698e',
+            _icon: {
+              color: '#fff',
+            },
+          }}
+          variant={'ghost'}
+          _icon={{
+            as: IonIcons,
+            name: 'chevron-back',
+            color: '#3c3e4f',
+          }}
+        />
+      </HStack>
+      <Box mx={5}>
+        <Box style={{position: 'absolute', zIndex: 10, left: '36.5%'}}>
+          <Avatar
+            size="xl"
+            bg="#a2abd4"
+            source={{
+              uri: detail?.photo,
+            }}>
+            {initials}
+          </Avatar>
         </Box>
 
-        {/* add button */}
-        <Center
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            right: 10,
-          }}>
-          <Fab
-            onPress={handleAddContact}
-            bg="#ff64cf"
-            _pressed={{
-              bg: '#b34691',
-            }}
-            renderInPortal={false}
+        {/* card */}
+        <Box mt={50}>
+          <Box
+            rounded="lg"
+            borderColor="coolGray.200"
             shadow={2}
-            size="sm"
-            icon={<Icon color="white" as={AntDesign} name="plus" size="sm" />}
-          />
-        </Center>
+            _dark={{
+              borderColor: 'coolGray.600',
+              backgroundColor: 'gray.700',
+            }}
+            _light={{
+              backgroundColor: 'gray.50',
+            }}>
+            <Box p={5}>
+              <Box mt={10}>
+                <Center>
+                  <Text fontSize={28} color="#3c3e4f">
+                    {detail?.firstName + ' ' + detail?.lastName}
+                  </Text>
+                  <Text color="#a2abd4">
+                    {detail.phoneNumber ? detail.phoneNumber : '+62-00000000'}
+                  </Text>
+                </Center>
+                <HStack
+                  justifyContent="center"
+                  alignItems="center"
+                  mt={10}
+                  space={5}>
+                  <IconButton
+                    borderRadius="full"
+                    colorScheme="violet"
+                    variant={'solid'}
+                    _icon={{
+                      as: IonIcons,
+                      name: 'call',
+                    }}
+                  />
+                  <IconButton
+                    borderRadius="full"
+                    colorScheme="blue"
+                    variant={'solid'}
+                    _icon={{
+                      as: IonIcons,
+                      name: 'chatbubble-ellipses',
+                    }}
+                  />
+                  <IconButton
+                    borderRadius="full"
+                    colorScheme="green"
+                    variant={'solid'}
+                    _icon={{
+                      as: IonIcons,
+                      name: 'mail',
+                    }}
+                  />
+                </HStack>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* others details */}
+        <VStack mt={10} space={5}>
+          <Box>
+            <Text color="#a2abd4">Email</Text>
+            <Text color="#3c3e4f">default@mail.com</Text>
+          </Box>
+          <Box>
+            <Text color="#a2abd4">Company</Text>
+            <Text color="#3c3e4f">Company Name</Text>
+          </Box>
+          <Box>
+            <Text color="#a2abd4">Address</Text>
+            <Text color="#3c3e4f">Jl. Address</Text>
+          </Box>
+          <Box>
+            <Text color="#a2abd4">Birthday</Text>
+            <Text color="#3c3e4f">10/10/1990</Text>
+          </Box>
+          <Box>
+            <Text color="#a2abd4">Umur</Text>
+            <Text color="#3c3e4f">{detail?.age}</Text>
+          </Box>
+        </VStack>
       </Box>
 
+      <Box flex={1} justifyContent="flex-end" alignItems="center">
+        <HStack mb={5} space={2}>
+          <IconButton
+            onPress={handleOpenForm}
+            size="md"
+            _icon={{
+              as: AntDesign,
+              name: 'edit',
+              color: '#537bf1',
+            }}
+            _pressed={{
+              bgColor: '#c0c9eb',
+            }}
+          />
+          <IconButton
+            size="md"
+            _icon={{
+              as: IonIcons,
+              name: 'star-outline',
+              color: '#facc15',
+            }}
+            _pressed={{
+              bgColor: '#fef9c3',
+            }}
+          />
+
+          <IconButton
+            onPress={() => setConfirm(true)}
+            size="md"
+            _icon={{
+              as: AntDesign,
+              name: 'delete',
+              color: '#ef4444',
+            }}
+            _pressed={{
+              bgColor: '#fecaca',
+            }}
+          />
+        </HStack>
+      </Box>
+
+      {/* form edit */}
       <ModalForm
         isOpen={openForm}
         size={'full'}
-        title="Add Contact"
+        title="Edit Contact"
         content={
           <Box my={5}>
             <VStack space={3}>
@@ -326,13 +474,19 @@ const ContactScreen = ({navigation}) => {
                   trigger={triggerProps => {
                     return (
                       <Pressable {...triggerProps} onPress={onOpenOptionCamera}>
-                        <Avatar size="xl" bg="#a2abd4" />
+                        <Avatar
+                          size="xl"
+                          bg="#a2abd4"
+                          // source={{
+                          //   uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80',
+                          // }}
+                        />
                       </Pressable>
                     );
                   }}
                   isOpen={openOptCamera}
                   onClose={onOpenOptionCamera}>
-                  <Popover.Content accessibilityLabel="Delete Customerd" w="56">
+                  <Popover.Content w="56">
                     <Popover.Arrow />
                     <Popover.CloseButton />
                     <Popover.Header>Photo</Popover.Header>
@@ -355,7 +509,6 @@ const ContactScreen = ({navigation}) => {
                   </Popover.Content>
                 </Popover>
               </Center>
-
               <Controller
                 control={control}
                 name="firstName"
@@ -426,6 +579,7 @@ const ContactScreen = ({navigation}) => {
                       placeholder="Age"
                       onChangeText={onChange}
                       value={value}
+                      type="number"
                     />
                     <FormControl.ErrorMessage
                       leftIcon={<WarningOutlineIcon size="xs" />}>
@@ -471,56 +625,21 @@ const ContactScreen = ({navigation}) => {
         }
         onClose={onCloseForm}
       />
-    </>
+
+      {/* confirm delete */}
+      <ModalAlert
+        isOpen={confirm}
+        onClose={() => setConfirm(false)}
+        title="Delete Contact"
+        content={<Text>Are you sure to DELETE contact?</Text>}
+        footer={
+          <Button colorScheme="danger" onPress={handleDelete}>
+            Delete
+          </Button>
+        }
+      />
+    </Box>
   );
 };
 
-export default ContactScreen;
-
-const data = [
-  {
-    id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
-    fullName: 'Aafreen Khan',
-    timeStamp: '12:47 PM',
-    recentText: 'Good Day!',
-    avatarUrl:
-      'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500',
-  },
-  {
-    id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
-    fullName: 'Sujitha Mathur',
-    timeStamp: '11:11 PM',
-    recentText: 'Cheer up, there!',
-    avatarUrl:
-      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTyEaZqT3fHeNrPGcnjLLX1v_W4mvBlgpwxnA&usqp=CAU',
-  },
-  {
-    id: '58694a0f-3da1-471f-bd96-145571e29d72',
-    fullName: 'Anci Barroco',
-    timeStamp: '6:22 PM',
-    recentText: 'Good Day!',
-    avatarUrl: 'https://miro.medium.com/max/1400/0*0fClPmIScV5pTLoE.jpg',
-  },
-  {
-    id: '68694a0f-3da1-431f-bd56-142371e29d72',
-    fullName: 'Aniket Kumar',
-    timeStamp: '8:56 PM',
-    recentText: 'All the best',
-    avatarUrl:
-      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSr01zI37DYuR8bMV5exWQBSw28C1v_71CAh8d7GP1mplcmTgQA6Q66Oo--QedAN1B4E1k&usqp=CAU',
-  },
-  {
-    id: '28694a0f-3da1-471f-bd96-142456e29d72',
-    fullName: 'Kiara',
-    timeStamp: '12:47 PM',
-    recentText: 'I will call today.',
-    avatarUrl:
-      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRBwgu1A5zgPSvfE83nurkuzNEoXs9DMNr8Ww&usqp=CAU',
-  },
-];
-
-const styles = StyleSheet.create({
-  txtColor: {
-    color: '#3c3e4f',
-  },
-});
+export default ContactDetailScreen;

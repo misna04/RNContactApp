@@ -2,8 +2,8 @@ import React from 'react';
 
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
-import ContactScreen from '../screens/ContactScreen';
-import ContactDetailScreen from '../screens/ContactDetailScreen';
+import ContactScreen from '../screens/contacts/ContactScreen';
+import ContactDetailScreen from '../screens/contacts/ContactDetailScreen';
 
 const ContactStack = createNativeStackNavigator();
 
