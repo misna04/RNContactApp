@@ -227,6 +227,7 @@ const ContactScreen = ({navigation}) => {
     console.log('useeffect');
     dispatch(getContacts());
   }, []);
+
   return (
     <>
       <Box style={{flex: 1}} bg="#fff">
@@ -312,6 +313,7 @@ const ContactScreen = ({navigation}) => {
           />
         </Center>
       </Box>
+
       <ModalForm
         isOpen={openForm}
         size={'full'}
