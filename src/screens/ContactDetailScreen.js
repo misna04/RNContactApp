@@ -44,6 +44,8 @@ const ContactDetailScreen = ({route, navigation}) => {
   const store = useSelector(state => state.contacts);
   const {detail, error} = store;
 
+  console.log('detail', detail);
+
   const toast = useToast();
 
   const {
@@ -95,8 +97,6 @@ const ContactDetailScreen = ({route, navigation}) => {
     // if (isCameraPermitted && isStoragePermitted)
     if (isCameraPermitted) {
       launchCamera(options, response => {
-        console.log('Response = ', response);
-
         if (response.didCancel) {
           alert('User cancelled camera picker');
           return;
@@ -131,8 +131,6 @@ const ContactDetailScreen = ({route, navigation}) => {
     };
 
     launchImageLibrary(options, response => {
-      console.log('Response = ', response);
-
       if (response.didCancel) {
         alert('User cancelled camera picker');
         return;
@@ -295,6 +293,7 @@ const ContactDetailScreen = ({route, navigation}) => {
   };
 
   useEffect(() => {
+    console.log('useeffect', id);
     dispatch(getDetail(id));
   }, []);
 
@@ -304,7 +303,6 @@ const ContactDetailScreen = ({route, navigation}) => {
   //     }
   //   }, [error]);
 
-  console.log('screen err', error);
   let fullName = `${detail.firstName + ' ' + detail.lastName}`;
   const initials = getInitials(fullName);
 

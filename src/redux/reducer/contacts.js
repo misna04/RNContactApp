@@ -4,60 +4,55 @@ import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 // ** Axios Imports
 import Api from '../../services/Api';
 
-export const getContacts = createAsyncThunk('contact/all', () => {
-  return Api.getContacts()
-    .then(res => {
-      return res.data;
-    })
-    .catch(err => {
-      return err;
-    });
+export const getContacts = createAsyncThunk('contact/all', async () => {
+  try {
+    const res = await Api.getContacts();
+    return res;
+  } catch (err) {
+    return err;
+  }
 });
 
-export const getDetail = createAsyncThunk('contact/detail', id => {
-  return Api.getDetail(id)
-    .then(res => {
-      console.log('detail', res.data);
-      return res.data;
-    })
-    .catch(err => {
-      return err;
-    });
+export const getDetail = createAsyncThunk('contact/detail', async id => {
+  try {
+    const res = await Api.getDetail(id);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
 });
 
 export const createContact = createAsyncThunk(
   'contact/create',
-  (data, {dispatch, getState}) => {
+  async (data, {dispatch, getState}) => {
     console.log('data', data);
-    return Api.createContact(data)
-      .then(async res => {
-        await dispatch(getContacts(getState()));
-        return res;
-      })
-      .catch(err => {
-        return err;
-      });
+    try {
+      const res = await Api.createContact(data);
+      await dispatch(getContacts(getState()));
+      return await res;
+    } catch (err) {
+      return err;
+    }
   },
 );
 
 export const updateContact = createAsyncThunk(
   'contact/update',
-  (contact, {dispatch, getState}) => {
+  async (contact, {dispatch, getState}) => {
     let newdata = {...contact};
     delete newdata.id;
-    return Api.updateContact(contact.id, newdata)
-      .then(async res => {
-        await dispatch(getDetail(contact.id));
-        await dispatch(getContacts());
-        return res.data;
-      })
-      .catch(err => {
-        if (err.response && err.response.data) {
-          throw new Error(err.response.data.message);
-        } else {
-          throw new Error('Unknown error occurred.');
-        }
-      });
+    try {
+      const res = await Api.updateContact(contact.id, newdata);
+      await dispatch(getDetail(contact.id));
+      await dispatch(getContacts());
+      return await res.data;
+    } catch (err) {
+      if (err.response && err.response.data) {
+        throw new Error(err.response.data.message);
+      } else {
+        throw new Error('Unknown error occurred.');
+      }
+    }
   },
 );
 
@@ -67,7 +62,7 @@ export const deleteContact = createAsyncThunk(
     return Api.deleteContact(id)
       .then(async res => {
         await dispatch(getContacts());
-        return res.data;
+        return res;
       })
       .catch(err => {
         if (err.response && err.response.data) {
@@ -103,7 +98,7 @@ export const contactSlice = createSlice({
         state.error = null;
       })
       .addCase(getDetail.fulfilled, (state, action) => {
-        state.detail = action.payload.data;
+        state.detail = action.payload;
         state.error = null;
       })
       // .addCase(updateContact.fulfilled, (state, action) => {

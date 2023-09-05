@@ -226,7 +226,6 @@ const ContactScreen = ({navigation}) => {
   };
 
   useEffect(() => {
-    console.log('useeffect');
     dispatch(getContacts());
   }, []);
 
@@ -255,11 +254,10 @@ const ContactScreen = ({navigation}) => {
               const initials = getInitials(fullName);
 
               return (
-                <TouchableOpacity onPress={() => handlePressContact(item.id)}>
-                  <Box
-                    pl={['0', '5']}
-                    // pr={['0', '5']}
-                    py="3">
+                <TouchableOpacity
+                  key={item._id}
+                  onPress={() => handlePressContact(item._id)}>
+                  <Box pl={['0', '5']} py="3">
                     <HStack space={[2, 3]}>
                       <Avatar
                         bg="green.500"
