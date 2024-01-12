@@ -1,10 +1,9 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import {Fab, Box, Icon, VStack, Center, Heading, Text} from 'native-base';
-import {StyleSheet} from 'react-native';
+import {StyleSheet, KeyboardAvoidingView, Platform} from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 // import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {GiftedChat} from 'react-native-gifted-chat';
-
 
 const MessageScreen = () => {
   const [text, setText] = useState('');
@@ -53,6 +52,7 @@ const MessageScreen = () => {
           avatar: 'https://placeimg.com/150/150/any',
         }}
       />
+      {/* {Platform.OS === 'android' && <KeyboardAvoidingView behavior="padding" />} */}
     </>
     // <Box style={{flex: 1}}>
     //   <Box mx={7} my={5}>
