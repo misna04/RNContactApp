@@ -279,7 +279,7 @@ const ContactScreen = ({navigation}) => {
                           _dark={{
                             color: 'warmGray.200',
                           }}>
-                          {item.age}
+                          {item.age || 0}
                         </Text>
                       </VStack>
                     </HStack>

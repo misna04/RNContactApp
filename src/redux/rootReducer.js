@@ -1,5 +1,5 @@
 // ** Reducers Imports
-import contacts from './reducer/contacts';
+import contacts from './reducer      /contacts';
 
 const rootReducer = {
   contacts,
